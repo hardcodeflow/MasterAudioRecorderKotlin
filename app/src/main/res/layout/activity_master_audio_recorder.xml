@@ -17,7 +17,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/status"
+            android:id="@+id/statusTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="-10dp"
@@ -27,7 +27,7 @@
             android:visibility="invisible"/>
 
         <TextView
-            android:id="@+id/timer"
+            android:id="@+id/timerTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="60sp"
@@ -43,12 +43,12 @@
         android:layout_alignParentBottom="true">
 
         <ImageButton
-            android:id="@+id/restart"
+            android:id="@+id/restartImageButton"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:layout_centerVertical="true"
-            android:layout_toStartOf="@+id/record"
-            android:layout_toLeftOf="@+id/record"
+            android:layout_toStartOf="@+id/recordImageButton"
+            android:layout_toLeftOf="@+id/recordImageButton"
             android:layout_marginTop="50dp"
             android:padding="10dp"
             android:scaleType="fitCenter"
@@ -57,7 +57,7 @@
             style="@style/Widget.AppCompat.Button.Borderless"/>
 
         <ImageButton
-            android:id="@+id/record"
+            android:id="@+id/recordImageButton"
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_centerInParent="true"
@@ -69,12 +69,12 @@
             style="@style/Widget.AppCompat.Button.Borderless"/>
 
         <ImageButton
-            android:id="@+id/play"
+            android:id="@+id/playImageButton"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:layout_centerVertical="true"
-            android:layout_toEndOf="@+id/record"
-            android:layout_toRightOf="@+id/record"
+            android:layout_toEndOf="@+id/recordImageButton"
+            android:layout_toRightOf="@+id/recordImageButton"
             android:layout_marginTop="50dp"
             android:padding="10dp"
             android:scaleType="fitCenter"

@@ -11,14 +11,15 @@ import com.hardcodeflow.masteraudiorecorder.audio.AudioSource
 
 class Util {
 
-    private val HANDLER = Handler()
 
-    private fun Util() {}
-    fun wait(millis: Int, callback: Runnable?) {
-        HANDLER.postDelayed(callback, millis.toLong())
-    }
+
+
     companion object {
+        private val HANDLER = Handler()
 
+        fun wait(millis: Int, callback: Runnable?) {
+            HANDLER.postDelayed(callback, millis.toLong())
+        }
     fun getMic(
         source: AudioSource,
         channel: AudioChannel,
