@@ -15,6 +15,9 @@ import com.cleveroad.audiovisualization.GLAudioVisualizationView
 import com.hardcodeflow.masteraudiorecorder.audio.AndroidAudioRecorderSettings
 import com.hardcodeflow.masteraudiorecorder.audio.VisualizerHandler
 import com.hardcodeflow.masteraudiorecorder.common.Util
+import com.hardcodeflow.whitefox.extensions.CustomIntent
+import com.hardcodeflow.whitefox.extensions.IntentAnimation
+import com.hardcodeflow.whitefox.extensions.toast
 import kotlinx.android.synthetic.main.activity_master_audio_recorder.*
 import omrecorder.AudioChunk
 import omrecorder.OmRecorder
@@ -37,6 +40,8 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
     private var playerSecondsElapsed = 0
     private var recorderSecondsElapsed = 0
     private val REQUEST_RECORD_AUDIO = 0
+    var audioFileTempPath: String =""
+    var audioFileRootPath: String =""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +52,9 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
 
         }
         setContentView(R.layout.activity_master_audio_recorder)
-
+        audioFileRootPath= this.getExternalFilesDir(null)!!.getAbsolutePath()
+        audioFileTempPath= audioFileRootPath+ "/temp.wav"
+        audioFileTempPath.toast(this)
 
         Util.requestPermission(this, Manifest.permission.RECORD_AUDIO)
         Util.requestPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -66,9 +73,18 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         recordImageButton.setOnClickListener {
             toggleRecording()
         }
-        playImageButton.setOnClickListener {
-            togglePlaying()
+        deleteImageButton.setOnClickListener {
+            stopRecording()
         }
+        menuImageButton.setOnClickListener {
+            startActivity(Intent(this, AudiosListActivity::class.java))
+            CustomIntent.customType(this, IntentAnimation.FadeIn)
+
+
+        }
+
+        contentRelativeLayout.setBackgroundColor(Util.getDarkerColor(recorderSettings.color));
+        contentRelativeLayout.addView(visualizerView, 0);
     }
     override fun onActivityResult(
         requestCode: Int,
@@ -98,10 +114,19 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
     }
 
     private fun stopRecording() {
+        visualizerHandler.stop()
+        visualizerHandler.release()
+
         visualizerView!!.release()
-        if (visualizerHandler != null) {
-            visualizerHandler.stop()
-        }
+        visualizerView!!.stopRendering()
+
+        isRecording=false
+        recordImageButton.setImageResource(R.drawable.aar_ic_rec)
+        timerTextView.setText("00:00:00")
+
+
+
+
         recorderSecondsElapsed = 0
         if (recorder != null) {
             recorder!!.stopRecording()
@@ -113,7 +138,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         try {
             stopRecording()
             mediaPlayer = MediaPlayer()
-            mediaPlayer.setDataSource(recorderSettings.filePath)
+            mediaPlayer.setDataSource(audioFileTempPath)
             mediaPlayer.prepare()
             mediaPlayer.start()
             visualizerView!!.linkTo<ByteArray>(
@@ -126,7 +151,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
             timerTextView.setText("00:00:00")
             statusTextView.setText(R.string.aar_playing)
             statusTextView.setVisibility(View.VISIBLE)
-            playImageButton.setImageResource(R.drawable.aar_ic_stop)
+        //    playImageButton.setImageResource(R.drawable.aar_ic_stop)
             playerSecondsElapsed = 0
             startTimer()
         } catch (e: java.lang.Exception) {
@@ -186,10 +211,11 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
 
         statusTextView.setText(R.string.aar_paused)
         statusTextView.setVisibility(View.VISIBLE)
-        restartImageButton.setVisibility(View.VISIBLE)
-        playImageButton.setVisibility(View.VISIBLE)
-        restartImageButton.setImageResource(R.drawable.aar_ic_rec)
-        playImageButton.setImageResource(R.drawable.aar_ic_play)
+       // restartImageButton.setVisibility(View.VISIBLE)
+       // playImageButton.setVisibility(View.VISIBLE)
+        recordImageButton.setImageResource(R.drawable.aar_ic_rec)
+       // restartImageButton.setImageResource(R.drawable.aar_ic_rec)
+     //   playImageButton.setImageResource(R.drawable.aar_ic_play)
         visualizerView!!.release()
         visualizerHandler?.stop()
         if (recorder != null) {
@@ -201,7 +227,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         stopPlaying()
         Util.wait(100, Runnable {
             if (isRecording) {
-                pauseRecording()
+                stopRecording()
             } else {
                 resumeRecording()
             }
@@ -212,7 +238,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
     private fun stopPlaying() {
         statusTextView.setText("")
         statusTextView.setVisibility(View.INVISIBLE)
-        playImageButton.setImageResource(R.drawable.aar_ic_play)
+       // playImageButton.setImageResource(R.drawable.aar_ic_play)
         visualizerView!!.release()
 
         visualizerHandler.stop()
@@ -233,10 +259,10 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         //saveMenuItem.setVisible(false)
         statusTextView.setText(R.string.aar_recording)
         statusTextView.setVisibility(View.VISIBLE)
-        restartImageButton.setVisibility(View.INVISIBLE)
-        playImageButton.setVisibility(View.INVISIBLE)
-        recordImageButton.setImageResource(R.drawable.aar_ic_pause)
-        playImageButton.setImageResource(R.drawable.aar_ic_play)
+       // restartImageButton.setVisibility(View.INVISIBLE)
+      //  playImageButton.setVisibility(View.INVISIBLE)
+        recordImageButton.setImageResource(R.drawable.aar_ic_stop)
+      //  playImageButton.setImageResource(R.drawable.aar_ic_play)
         visualizerHandler = VisualizerHandler()
        // visualizerView!!.linkTo<Any>(visualizerHandler)
         visualizerView!!.linkTo(visualizerHandler)
@@ -248,7 +274,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
                     Util.getMic( recorderSettings.source, recorderSettings.channel, recorderSettings.sampleRate),
                     this
                 ),
-                File(recorderSettings.filePath)
+                File(audioFileTempPath)
             )
         }
         recorder!!.resumeRecording()
