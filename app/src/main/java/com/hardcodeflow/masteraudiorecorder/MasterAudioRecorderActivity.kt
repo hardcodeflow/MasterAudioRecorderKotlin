@@ -24,6 +24,9 @@ import omrecorder.OmRecorder
 import omrecorder.PullTransport
 import omrecorder.Recorder
 import java.io.File
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 
@@ -229,7 +232,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
             if (isRecording) {
                 stopRecording()
             } else {
-                resumeRecording()
+                recordNewAudio()
             }
         })
     }
@@ -253,7 +256,36 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         stopTimer()
     }
 
+    private fun recordNewAudio() {
+        val sdf = SimpleDateFormat("dd_MM_yyyy_hh_mm_ss")
+        val currentDate = sdf.format(Date())
+        audioFileTempPath= audioFileRootPath+ "/Audio "+currentDate+".wav"
 
+        isRecording = true
+        //saveMenuItem.setVisible(false)
+        statusTextView.setText(R.string.aar_recording)
+        statusTextView.setVisibility(View.VISIBLE)
+        // restartImageButton.setVisibility(View.INVISIBLE)
+        //  playImageButton.setVisibility(View.INVISIBLE)
+        recordImageButton.setImageResource(R.drawable.aar_ic_stop)
+        //  playImageButton.setImageResource(R.drawable.aar_ic_play)
+        visualizerHandler = VisualizerHandler()
+        // visualizerView!!.linkTo<Any>(visualizerHandler)
+        visualizerView!!.linkTo(visualizerHandler)
+
+        if (recorder == null) {
+            timerTextView.setText("00:00:00")
+            recorder = OmRecorder.wav(
+                PullTransport.Default(
+                    Util.getMic( recorderSettings.source, recorderSettings.channel, recorderSettings.sampleRate),
+                    this
+                ),
+                File(audioFileTempPath)
+            )
+        }
+        recorder!!.resumeRecording()
+        startTimer()
+    }
     private fun resumeRecording() {
         isRecording = true
         //saveMenuItem.setVisible(false)
