@@ -1,9 +1,13 @@
 package com.hardcodeflow.masteraudiorecorder.common
 
 import android.R
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioFormat
 import android.os.Handler
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.hardcodeflow.masteraudiorecorder.audio.AudioChannel
 import com.hardcodeflow.masteraudiorecorder.audio.AudioSampleRate
 import com.hardcodeflow.masteraudiorecorder.audio.AudioSource
@@ -16,7 +20,13 @@ class Util {
 
     companion object {
         private val HANDLER = Handler()
-
+        fun requestPermission(activity: Activity?, permission: String) {
+            if (ContextCompat.checkSelfPermission(activity!!, permission)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(activity, arrayOf(permission), 0)
+            }
+        }
         fun wait(millis: Int, callback: Runnable?) {
             HANDLER.postDelayed(callback, millis.toLong())
         }

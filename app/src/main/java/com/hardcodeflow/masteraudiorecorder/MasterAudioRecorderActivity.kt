@@ -1,11 +1,16 @@
 package com.hardcodeflow.masteraudiorecorder
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.media.MediaPlayer
 import android.media.MediaPlayer.OnCompletionListener
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.cleveroad.audiovisualization.DbmHandler
 import com.cleveroad.audiovisualization.GLAudioVisualizationView
 import com.hardcodeflow.masteraudiorecorder.audio.AndroidAudioRecorderSettings
 import com.hardcodeflow.masteraudiorecorder.audio.VisualizerHandler
@@ -31,6 +36,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
     private var timer: Timer = Timer()
     private var playerSecondsElapsed = 0
     private var recorderSecondsElapsed = 0
+    private val REQUEST_RECORD_AUDIO = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +47,10 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
 
         }
         setContentView(R.layout.activity_master_audio_recorder)
+
+
+        Util.requestPermission(this, Manifest.permission.RECORD_AUDIO)
+        Util.requestPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         visualizerView = GLAudioVisualizationView.Builder(this)
             .setLayersCount(1)
@@ -56,14 +66,82 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         recordImageButton.setOnClickListener {
             toggleRecording()
         }
+        playImageButton.setOnClickListener {
+            togglePlaying()
+        }
+    }
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode ==REQUEST_RECORD_AUDIO) {
+            if (resultCode == Activity.RESULT_OK) {
+                Toast.makeText(this, "Audio recorded successfully!", Toast.LENGTH_SHORT).show()
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                Toast.makeText(this, "Audio was not recorded", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    override fun onAudioChunkPulled(audioChunk: AudioChunk?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+    fun togglePlaying() {
+        pauseRecording()
+        Util.wait(100, Runnable {
+            if (isPlaying()) {
+                stopPlaying()
+            } else {
+                startPlaying()
+            }
+        })
     }
+
+    private fun stopRecording() {
+        visualizerView!!.release()
+        if (visualizerHandler != null) {
+            visualizerHandler.stop()
+        }
+        recorderSecondsElapsed = 0
+        if (recorder != null) {
+            recorder!!.stopRecording()
+            recorder = null
+        }
+        stopTimer()
+    }
+    private fun startPlaying() {
+        try {
+            stopRecording()
+            mediaPlayer = MediaPlayer()
+            mediaPlayer.setDataSource(recorderSettings.filePath)
+            mediaPlayer.prepare()
+            mediaPlayer.start()
+            visualizerView!!.linkTo<ByteArray>(
+                DbmHandler.Factory.newVisualizerHandler(
+                    this,
+                    mediaPlayer
+                )
+            )
+            visualizerView!!.post { mediaPlayer.setOnCompletionListener(this) }
+            timerTextView.setText("00:00:00")
+            statusTextView.setText(R.string.aar_playing)
+            statusTextView.setVisibility(View.VISIBLE)
+            playImageButton.setImageResource(R.drawable.aar_ic_stop)
+            playerSecondsElapsed = 0
+            startTimer()
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+    }
+    override fun onAudioChunkPulled(audioChunk: AudioChunk?) {
+        val amplitude =
+            if (isRecording) audioChunk!!.maxAmplitude().toFloat() else 0f
+        visualizerHandler.onDataReceived(amplitude)
+    }
+
 
     override fun onCompletion(mp: MediaPlayer?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        stopPlaying()
     }
     private fun stopTimer() {
         if (timer != null) {
@@ -137,7 +215,7 @@ class MasterAudioRecorderActivity : AppCompatActivity(), PullTransport.OnAudioCh
         playImageButton.setImageResource(R.drawable.aar_ic_play)
         visualizerView!!.release()
 
-            visualizerHandler.stop()
+        visualizerHandler.stop()
 
         if (mediaPlayer != null) {
             try {
